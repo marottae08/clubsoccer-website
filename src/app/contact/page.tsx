@@ -1,5 +1,5 @@
 // Replace INSTAGRAM_URL and EMAIL with real values when ready
-const INSTAGRAM_URL = "https://instagram.com/carlетoncluбsoccer";
+const INSTAGRAM_URL = "https://instagram.com/carletonclubsoccer";
 const EMAIL = "clubsoccer@carleton.edu";
 
 function InstagramIcon() {

@@ -24,7 +24,7 @@ export default function HomePage() {
         <p className="text-sm font-semibold uppercase tracking-widest text-carleton-blue mb-3">
           Carleton College
         </p>
-        <h1 className="text-5xl font-bold tracking-tight text-gray-900 mb-4">Club Soccer</h1>
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 mb-4">Club Soccer</h1>
         <p className="text-lg text-gray-500 max-w-xl mx-auto">
           Schedules, roster, and season stats for Carleton&apos;s club soccer team.
         </p>
