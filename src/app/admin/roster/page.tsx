@@ -13,7 +13,7 @@ import {
 } from "@/lib/firebase";
 
 const POSITIONS = ["GK", "DEF", "MID", "FWD"];
-const emptyPlayer = { name: "", number: "", position: "MID" };
+const emptyPlayer = { photoUrl: "", name: "", number: "", position: "MID" };
 
 export default function AdminRosterPage() {
   const [rosters, setRosters] = useState<Roster[]>([]);
@@ -42,7 +42,7 @@ export default function AdminRosterPage() {
 
   function startEdit(player: Player) {
     setEditingId(player.id);
-    setEditForm({ name: player.name, number: String(player.number), position: player.position });
+    setEditForm({ photoUrl: player.photoUrl ?? "", name: player.name, number: String(player.number), position: player.position });
   }
 
   async function handleUpdate(e: React.FormEvent) {
@@ -52,6 +52,7 @@ export default function AdminRosterPage() {
     setError(null);
     try {
       await updatePlayerInRoster(selectedId, editingId, {
+        photoUrl: editForm.photoUrl.trim() || undefined,
         name: editForm.name,
         number: Number(editForm.number),
         position: editForm.position,
@@ -72,6 +73,7 @@ export default function AdminRosterPage() {
     setError(null);
     try {
       await addPlayerToRoster(selectedId, {
+        photoUrl: addForm.photoUrl.trim() || undefined,
         name: addForm.name,
         number: Number(addForm.number),
         position: addForm.position,
@@ -177,6 +179,12 @@ export default function AdminRosterPage() {
               editingId === player.id ? (
                 <form key={player.id} onSubmit={handleUpdate} className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
                   <input
+                    value={editForm.photoUrl}
+                    onChange={(e) => setEditForm({ ...editForm, photoUrl: e.target.value })}
+                    className={inputCls + " w-40"}
+                    placeholder="Photo URL"
+                  />
+                  <input
                     type="number"
                     required
                     min={1}
@@ -228,6 +236,15 @@ export default function AdminRosterPage() {
           <div className="border-t border-gray-100 pt-8">
             <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 mb-4">Add Player</h2>
             <form onSubmit={handleAdd} className="flex items-end gap-3 flex-wrap">
+                <div className="w-40">
+                <label className="block text-xs text-gray-500 mb-1">Photo URL</label>
+                <input
+                  value={addForm.photoUrl}
+                  onChange={(e) => setAddForm({ ...addForm, photoUrl: e.target.value })}
+                  className={inputCls + " w-full"}
+                  placeholder="/players/player-name.jpg"
+                />
+              </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">#</label>
                 <input
