@@ -44,7 +44,7 @@ export interface Player {
   name: string;
   number: number;
   position: string;
-  photoURL?: string;
+  photoUrl?: string;
 }
 
 export interface ScheduleGame {
