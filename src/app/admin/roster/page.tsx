@@ -1,5 +1,5 @@
 "use client";
-
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -8,6 +8,7 @@ import {
   addPlayerToRoster,
   updatePlayerInRoster,
   removePlayerFromRoster,
+  storage,
   type Roster,
   type Player,
 } from "@/lib/firebase";
@@ -26,6 +27,8 @@ export default function AdminRosterPage() {
   const [showNewSeason, setShowNewSeason] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [addPhotoFile, setAddPhotoFile] = useState<File | null>(null);
+  const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
 
   async function load() {
     setLoading(true);
@@ -46,46 +49,72 @@ export default function AdminRosterPage() {
   }
 
   async function handleUpdate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editingId || !selectedId) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await updatePlayerInRoster(selectedId, editingId, {
-        photoUrl: editForm.photoUrl.trim() || undefined,
-        name: editForm.name,
-        number: Number(editForm.number),
-        position: editForm.position,
-      });
-      setEditingId(null);
-      await load();
-    } catch (err: unknown) {
-      setError((err as Error).message);
-    } finally {
-      setSaving(false);
+  e.preventDefault();
+  if (!editingId || !selectedId) return;
+  setSaving(true);
+  setError(null);
+
+  try {
+    let photoUrl = editForm.photoUrl.trim() || undefined;
+
+    if (editPhotoFile) {
+      photoUrl = await uploadPlayerPhoto(editPhotoFile);
     }
+
+    await updatePlayerInRoster(selectedId, editingId, {
+      photoUrl,
+      name: editForm.name,
+      number: Number(editForm.number),
+      position: editForm.position,
+    });
+
+    setEditingId(null);
+    setEditPhotoFile(null);
+    await load();
+  } catch (err: unknown) {
+    setError((err as Error).message);
+  } finally {
+    setSaving(false);
+  }
+}
+  async function uploadPlayerPhoto(file: File): Promise<string> {
+    const safeName = file.name.replace(/\s+/g, "-").toLowerCase();
+    const filePath = `players/${Date.now()}-${safeName}`;
+    const storageRef = ref(storage, filePath);
+  
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
   }
 
   async function handleAdd(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedId) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await addPlayerToRoster(selectedId, {
-        photoUrl: addForm.photoUrl.trim() || undefined,
-        name: addForm.name,
-        number: Number(addForm.number),
-        position: addForm.position,
-      });
-      setAddForm(emptyPlayer);
-      await load();
-    } catch (err: unknown) {
-      setError((err as Error).message);
-    } finally {
-      setSaving(false);
+  e.preventDefault();
+  if (!selectedId) return;
+  setSaving(true);
+  setError(null);
+
+  try {
+    let photoUrl = addForm.photoUrl.trim() || undefined;
+
+    if (addPhotoFile) {
+      photoUrl = await uploadPlayerPhoto(addPhotoFile);
     }
+
+    await addPlayerToRoster(selectedId, {
+      photoUrl,
+      name: addForm.name,
+      number: Number(addForm.number),
+      position: addForm.position,
+    });
+
+    setAddForm(emptyPlayer);
+    setAddPhotoFile(null);
+    await load();
+  } catch (err: unknown) {
+    setError((err as Error).message);
+  } finally {
+    setSaving(false);
   }
+}
 
   async function handleRemove(playerId: string, name: string) {
     if (!selectedId || !confirm(`Remove ${name}?`)) return;
@@ -178,12 +207,14 @@ export default function AdminRosterPage() {
             {players.map((player) =>
               editingId === player.id ? (
                 <form key={player.id} onSubmit={handleUpdate} className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                  <div className="w-48">
                   <input
-                    value={editForm.photoUrl}
-                    onChange={(e) => setEditForm({ ...editForm, photoUrl: e.target.value })}
-                    className={inputCls + " w-40"}
-                    placeholder="Photo URL"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setEditPhotoFile(e.target.files?.[0] ?? null)}
+                    className={inputCls + " w-full"}
                   />
+                </div>
                   <input
                     type="number"
                     required
@@ -236,14 +267,15 @@ export default function AdminRosterPage() {
           <div className="border-t border-gray-100 pt-8">
             <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 mb-4">Add Player</h2>
             <form onSubmit={handleAdd} className="flex items-end gap-3 flex-wrap">
-                <div className="w-40">
-                <label className="block text-xs text-gray-500 mb-1">Photo URL</label>
+                <div className="w-48">
+                <label className="block text-xs text-gray-500 mb-1">Photo</label>
                 <input
-                  value={addForm.photoUrl}
-                  onChange={(e) => setAddForm({ ...addForm, photoUrl: e.target.value })}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setAddPhotoFile(e.target.files?.[0] ?? null)}
                   className={inputCls + " w-full"}
-                  placeholder="/players/player-name.jpg"
                 />
+              </div>
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">#</label>
